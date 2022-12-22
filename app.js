@@ -17,7 +17,7 @@ app.use((req, res, next) => {
 });
 
 // подключаемся к серверу mongo
-mongoose.connect('mongodb://localhost:27017/mestodb', {
+mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
   useNewUrlParser: true,
 }, () => {
   console.log("Connected to Mongo db");
