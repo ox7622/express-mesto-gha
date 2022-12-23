@@ -30,7 +30,7 @@ module.exports.getUsers = async (req, res) => {
 
 module.exports.findUser = async (req, res) => {
   try {
-    const { id } = req.user._id;
+    const { id } = req.params;
     const user = await User.findById(id);
 
     if (!user) {
@@ -41,9 +41,10 @@ module.exports.findUser = async (req, res) => {
   }
   catch (err) {
     console.error(err);
-    return res.status(500).json({ message: "Произошла ошибка" });
+    err.name == "ValidationError" ?
+    res.status(400).json({ message: "Произошла ошибка валидации id" }) :
+    res.status(500).json({ message: "Произошла ошибка" });
   }
-
 };
 
 
@@ -64,7 +65,9 @@ module.exports.updateUser = async (req, res) => {
   }
   catch (err) {
     console.error(err);
-    err.name == "ValidationError" ? res.status(400).json({ message: "Произошла ошибка валидации данных пользователя" }) : res.status(500).json({ message: "Произошла ошибка" });
+    err.name == "ValidationError" ?
+    res.status(400).json({ message: "Произошла ошибка валидации данных пользователя" }) :
+    res.status(500).json({ message: "Произошла ошибка" });
   }
 
 };
@@ -86,8 +89,8 @@ module.exports.updateAvatar = async (req, res) => {
   }
   catch (err) {
     console.error(err);
-    err.name == "ValidationError" ? res.status(400).json({ message: "Произошла ошибка, проверьте ссылку на аватар" }) : res.status(500).json({ message: "Произошла ошибка" });
+    err.name == "ValidationError" ?
+    res.status(400).json({ message: "Произошла ошибка, проверьте ссылку на аватар" }) :
+    res.status(500).json({ message: "Произошла ошибка" });
   }
-
-
 }
