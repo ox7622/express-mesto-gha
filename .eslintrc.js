@@ -20,5 +20,5 @@ module.exports = {
   "rules": {
     "allow": "_id"
   },
-  "extends": "airbnb-base"
+
 }
