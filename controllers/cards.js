@@ -28,12 +28,13 @@ module.exports.createCard = async (req, res) => {
 
 module.exports.deleteCard = async (req, res) => {
   try {
-    const {id} = req.params;
-    if (!Card.find(id)) {
-      return res.status(404).json({message: "Карточка не найдена"});
+    const { id } = req.params;
+    const card = await Card.findById(id);
+    if (!card) {
+      return res.status(404).json({ message: "Карточка не найдена" });
     }
     await Card.findByIdAndRemove(id);
-    return res.status(200).json({message: "Карточка удалена"});
+    return res.status(200).json({ message: "Карточка удалена" });
   }
   catch (err) {
     console.error(err);
@@ -55,11 +56,11 @@ module.exports.likeCard = async (req, res) => {
       return res.status(404).json({ message: "Такой карточки нет" });
     }
 
-    return res.status(200).json({message: "Лайк поставлен"});
+    return res.status(200).json({ message: "Лайк поставлен" });
   }
   catch (err) {
     console.error(err);
-    err.name == "ValidationError" ?
+    err.name == "ValidationError" || err.name == "CastError" ?
       res.status(400).json({ message: "Произошла ошибка валидации id карточки" }) :
       res.status(500).json({ message: "Произошла ошибка" });
   }
@@ -78,12 +79,12 @@ module.exports.dislikeCard = async (req, res) => {
       return res.status(404).json({ message: "Такой карточки нет" })
     };
 
-    return res.status(200).json({message: "Лайк снят"});
+    return res.status(200).json({ message: "Лайк снят" });
   }
 
   catch (err) {
     console.error(err);
-    err.name == "ValidationError" ?
+    err.name == "ValidationError" || err.name == "CastError" ?
       res.status(400).json({ message: "Произошла ошибка валидации id карточки" }) :
       res.status(500).json({ message: "Произошла ошибка" });
   }

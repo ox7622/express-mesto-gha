@@ -25,7 +25,9 @@ mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
 
 app.use(express.json());
 app.use('/', routerUser, routerCard);
-
+app.all('/*', (req, res) => {
+  return res.status(404).json({ message: "Страница не существует" });
+});
 
 app.listen(PORT, () => {
   // Если всё работает, консоль покажет, какой порт приложение слушает
