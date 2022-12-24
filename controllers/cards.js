@@ -38,7 +38,7 @@ module.exports.deleteCard = async (req, res) => {
   }
   catch (err) {
     console.error(err);
-    err.name == "ValidationError" ?
+    err.name == "ValidationError" || err.name == "CastError" ?
       res.status(400).json({ message: "Произошла ошибка валидации данных места" }) :
       res.status(500).json({ message: "Произошла ошибка" });
   }
