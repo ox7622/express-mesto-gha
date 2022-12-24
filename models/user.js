@@ -10,15 +10,15 @@ const userSchema = new mongoose.Schema({
 
   about: {
     type: String, // тип — String
-    required: true, // оно должно быть у каждого пользователя, так что имя — обязательное поле
+    required: true,
     minlength: 2, // минимальная длина имени — 2 символа
     maxlength: 30, // а максимальная — 30 символов
   },
 
   avatar: {
     type: String,
-    required: true
+    required: true,
   },
 });
 
-module.exports = mongoose.model('user', userSchema)
+module.exports = mongoose.model('user', userSchema);

@@ -1,4 +1,6 @@
+/* eslint-disable no-console */
 const Card = require('../models/card');
+
 const status200 = 200;
 const error400 = 400;
 const error404 = 404;
@@ -8,10 +10,10 @@ module.exports.getCards = async (req, res) => {
   try {
     const cards = await Card.find({});
     return res.status(status200).json(cards);
-  }
-  catch (err) {
+  } catch (err) {
+    // eslint-disable-next-line no-console
     console.error(err);
-    return res.status(error500).json({ message: "Произошла ошибка" });
+    return res.status(error500).json({ message: 'Произошла ошибка' });
   }
 };
 
@@ -20,31 +22,31 @@ module.exports.createCard = async (req, res) => {
     const { name, link } = req.body;
     const card = await Card.create({ name, link, owner: req.user._id });
     return res.status(status200).json(card);
-  }
-  catch (err) {
+  } catch (err) {
+    // eslint-disable-next-line no-console
     console.error(err);
-    err.name == "ValidationError" ?
-      res.status(error400).json({ message: "Произошла ошибка валидации данных места" }) :
-      res.status(error500).json({ message: "Произошла ошибка" });
+    if (err.name === 'ValidationError') {
+      return res.status(error400).json({ message: 'Произошла ошибка валидации данных места' });
+    }
+    return res.status(error500).json({ message: 'Произошла ошибка' });
   }
-
 };
 
 module.exports.deleteCard = async (req, res) => {
   try {
     const { id } = req.params;
     const card = await Card.findById(id);
-    !card ?
-      res.status(error404).json({ message: "Карточка не найдена" }) :
-      await Card.findByIdAndRemove(id);
-    return res.status(status200).json({ message: "Карточка удалена" });
-  }
-
-  catch (err) {
+    if (!card) {
+      return res.status(error404).json({ message: 'Карточка не найдена' });
+    }
+    await Card.findByIdAndRemove(id);
+    return res.status(status200).json({ message: 'Карточка удалена' });
+  } catch (err) {
     console.error(err);
-    err.name == "ValidationError" || err.name == "CastError" ?
-      res.status(error400).json({ message: "Произошла ошибка валидации данных места" }) :
-      res.status(error500).json({ message: "Произошла ошибка" });
+    if (err.name === 'ValidationError' || err.name === 'CastError') {
+      return res.status(error400).json({ message: 'Произошла ошибка валидации данных места' });
+    }
+    return res.status(error500).json({ message: 'Произошла ошибка' });
   }
 };
 
@@ -56,19 +58,17 @@ module.exports.likeCard = async (req, res) => {
       { new: true },
     );
 
-    !setLike ?
-      res.status(error404).json({ message: "Такой карточки нет" }) :
-      res.status(status200).json({ message: "Лайк поставлен" });
-
-
-  }
-  catch (err) {
+    if (!setLike) {
+      return res.status(error404).json({ message: 'Такой карточки нет' });
+    }
+    return res.status(status200).json({ message: 'Лайк поставлен' });
+  } catch (err) {
     console.error(err);
-    err.name == "ValidationError" || err.name == "CastError" ?
-      res.status(error400).json({ message: "Произошла ошибка валидации id карточки" }) :
-      res.status(error500).json({ message: "Произошла ошибка" });
+    if (err.name === 'ValidationError' || err.name === 'CastError') {
+      return res.status(error400).json({ message: 'Произошла ошибка валидации id карточки' });
+    }
+    return res.status(error500).json({ message: 'Произошла ошибка' });
   }
-
 };
 
 module.exports.dislikeCard = async (req, res) => {
@@ -79,16 +79,15 @@ module.exports.dislikeCard = async (req, res) => {
       { new: true },
     );
 
-    !unlike ?
-      res.status(error404).json({ message: "Такой карточки нет" }) :
-      res.status(status200).json({ message: "Лайк снят" });
-  }
-
-  catch (err) {
+    if (!unlike) {
+      return res.status(error404).json({ message: 'Такой карточки нет' });
+    }
+    return res.status(status200).json({ message: 'Лайк снят' });
+  } catch (err) {
     console.error(err);
-    err.name == "ValidationError" || err.name == "CastError" ?
-      res.status(error400).json({ message: "Произошла ошибка валидации id карточки" }) :
-      res.status(error500).json({ message: "Произошла ошибка" });
+    if (err.name === 'ValidationError' || err.name === 'CastError') {
+      return res.status(error400).json({ message: 'Произошла ошибка валидации id карточки' });
+    }
+    return res.status(error500).json({ message: 'Произошла ошибка' });
   }
-
-}
+};
