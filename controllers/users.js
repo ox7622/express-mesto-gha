@@ -1,64 +1,67 @@
 const bcrypt = require('bcrypt');
-const { isObjectIdOrHexString } = require('mongoose');
 const User = require('../models/user');
 const {
-  status200, error400, error401, error404,
+  status200,
 } = require('../constants/status');
 const { createToken, decodeToken } = require('../middlewares/auth');
-const { errorHadler } = require('../middlewares/errors');
-const { emailValidation, linkValidation } = require('../utils/regexValidation');
+const BadRequestError = require('../errors/BadRequestError');
+const NotFoundError = require('../errors/NotFoundError');
+const AccountExistsError = require('../errors/AccountExistsError');
+const LoginError = require('../errors/LoginError');
 
-module.exports.createUser = async (req, res) => {
-  const {
-    name, about, avatar, email, password,
-  } = req.body;
-  if (emailValidation(email)) {
-    try {
-      await User.init();
-      const hash = await bcrypt.hash(password, 10);
-      const user = await User.create({
-        name, about, avatar, email, password: hash,
-      });
-      return res.status(status200).json(user);
-    } catch (err) {
-      return errorHadler(req, res, err, 'данных пользователя');
+module.exports.createUser = async (req, res, next) => {
+  try {
+    const {
+      name, about, avatar, email, password,
+    } = req.body;
+    await User.init();
+    const hash = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      name, about, avatar, email, password: hash,
+    });
+    return res.status(status200).json(user);
+  } catch (err) {
+    if (err.code === 11000) {
+      return next(new AccountExistsError('Пользователь с такими данными уже есть в базе'));
     }
-  } return res.status(error400).json({ message: 'Формат email не валидный' });
+    if (err.name === 'ValidationError' || err.name === 'CastError') {
+      return next(new BadRequestError('Ошибка валидации данных пользователя'));
+    }
+    return next(err);
+  }
 };
 
-module.exports.getUsers = async (req, res) => {
+module.exports.getUsers = async (req, res, next) => {
   try {
     const users = await User.find({});
     return res.status(status200).json(users);
   } catch (err) {
-    return errorHadler(req, res, err, '');
+    return next(err);
   }
 };
 
-module.exports.findUser = async (req, res) => {
+module.exports.findUser = async (req, res, next) => {
   const { id } = req.params;
-  if (isObjectIdOrHexString(id)) {
-    try {
-      const user = await User.findById(id);
-      if (!user) {
-        return res.status(error404).json({ message: 'Пользователь не найден' });
-      }
-      return res.status(status200).json(user);
-    } catch (err) {
-      return errorHadler(req, res, err, 'id');
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      throw new NotFoundError('Пользователь не найден');
     }
-  } return res.status(error400).json({ message: 'Id не соответствует типу ObjectId' });
+    return res.status(status200).json(user);
+  } catch (err) {
+    if (err.name === 'ValidationError' || err.name === 'CastError') {
+      return next(new BadRequestError('Ошибка валидации данных пользователя'));
+    }
+    return next(err);
+  }
 };
 
-module.exports.updateUser = async (req, res) => {
+module.exports.updateUser = async (req, res, next) => {
   const userId = decodeToken(req.user);
   if (!User.findById(userId._id)) {
-    return res.status(error404).json({ message: 'Пользователь не найден' });
+    throw new NotFoundError('Пользователь не найден');
   }
   const { name, about } = req.body;
-  if (!name || !about) {
-    return res.status(error400).json({ message: 'Заполните оба поля с данными пользователя' });
-  }
   try {
     const user = await User.findByIdAndUpdate(
       userId._id,
@@ -70,62 +73,70 @@ module.exports.updateUser = async (req, res) => {
     );
     return res.status(status200).json(user);
   } catch (err) {
-    return errorHadler(req, res, err, 'данных пользователя');
+    if (err.name === 'ValidationError' || err.name === 'CastError') {
+      return next(new BadRequestError('Ошибка валидации данных пользователя'));
+    }
+    return next(err);
   }
 };
 
-module.exports.updateAvatar = async (req, res) => {
+module.exports.updateAvatar = async (req, res, next) => {
   const userId = decodeToken(req.user);
   const { avatar } = req.body;
-  if (linkValidation(avatar)) {
-    try {
-      if (!User.findById(userId._id)) {
-        return res.status(error404).json({ message: 'Пользователь не найден' });
-      }
-      const user = await User.findByIdAndUpdate(
-        userId._id,
-        { avatar },
-        {
-          new: true, // обработчик then получит на вход обновлённую запись
-          runValidators: true, // данные будут валидированы перед изменением
-        },
-      );
-
-      return res.status(status200).json(user);
-    } catch (err) {
-      return errorHadler(req, res, err, 'данных ссылки на аватар пользователя');
+  try {
+    if (!User.findById(userId._id)) {
+      throw new NotFoundError('Пользователь не найден');
     }
-  } return res.status(error400).json({ message: 'Ссылка не валидна' });
+    const user = await User.findByIdAndUpdate(
+      userId._id,
+      { avatar },
+      {
+        new: true, // обработчик then получит на вход обновлённую запись
+        runValidators: true, // данные будут валидированы перед изменением
+      },
+    );
+
+    return res.status(status200).json(user);
+  } catch (err) {
+    if (err.name === 'ValidationError' || err.name === 'CastError') {
+      return next(new BadRequestError('Ошибка валидации данных ссылки на аватар пользователя'));
+    }
+    return next(err);
+  }
 };
 
-module.exports.login = async (req, res) => {
+module.exports.login = async (req, res, next) => {
   const { email, password } = req.body;
-  if (emailValidation(email)) {
-    try {
-      const user = await User.findOne({ email }).select('+password');
-      if (!user) {
-        return res.status(error404).json({ message: 'Пользователь не найден' });
-      }
-      const result = await bcrypt.compare(password, user.password);
-      if (result) {
-        const token = createToken(user);
-        return res.cookie('token', token, {
-          httpOnly: true,
-        }).status(status200).json({ message: 'Вы успешно вошли' });
-      }
-      return res.status(error401).json({ message: 'Неправильный логин или пароль' });
-    } catch (err) {
-      return errorHadler(req, res, err, 'данных пользователя');
+  try {
+    const user = await User.findOne({ email }).select('+password');
+    if (!user) {
+      throw new NotFoundError('Пользователь не найден');
     }
-  } return res.status(error400).json({ message: 'Формат email не валидный ' });
+    const result = await bcrypt.compare(password, user.password);
+    if (result) {
+      const token = createToken(user);
+      return res.cookie('token', token, {
+        httpOnly: true,
+      }).status(status200).json({ message: 'Вы успешно вошли' });
+    }
+    throw new LoginError('Неправильный логин или пароль');
+  } catch (err) {
+    if (err.name === 'ValidationError' || err.name === 'CastError') {
+      return next(new BadRequestError('Ошибка валидации данных ссылки на аватар пользователя'));
+    }
+    return next(err);
+  }
 };
 
-module.exports.getProfile = async (req, res) => {
+module.exports.getProfile = async (req, res, next) => {
   const userId = decodeToken(req.user);
   try {
     const user = await User.findById(userId._id);
     return res.status(status200).json(user);
   } catch (err) {
-    return errorHadler(req, res, err, 'данных пользователя');
+    if (err.name === 'ValidationError' || err.name === 'CastError') {
+      return next(new BadRequestError('Ошибка валидации данных ссылки на аватар пользователя'));
+    }
+    return next(err);
   }
 };

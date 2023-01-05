@@ -1,7 +1,6 @@
 /* eslint-disable consistent-return */
 const jwt = require('jsonwebtoken');
-const { error401 } = require('../constants/status');
-const { errorHadler } = require('./errors');
+const LoginError = require('../errors/LoginError');
 
 const tokenKey = 'mytokendonkey';
 
@@ -14,23 +13,24 @@ module.exports.checkToken = (req, res, next) => {
   const authData = req.headers.authorization;
   const token = authData.replace('Bearer ', '');
   if (!authData || !authData.startsWith('Bearer ')) {
-    return res.status(error401).json({ message: 'Пользователь не авторизован' });
+    throw new LoginError('Пользователь не авторизован');
   }
   try {
     jwt.verify(token, tokenKey);
   } catch (err) {
-    errorHadler(err, '');
+    return next(new LoginError('Пользователь не авторизован'));
   }
   req.user = token;
   next();
 };
-module.exports.decodeToken = (token) => {
+
+module.exports.decodeToken = (token, next) => {
   if (!token) {
-    return false;
+    throw new LoginError('Пользователь не авторизован');
   }
   try {
     return jwt.decode(token);
   } catch (err) {
-    errorHadler(err, '');
+    return next(err);
   }
 };
