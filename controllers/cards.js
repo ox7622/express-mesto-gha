@@ -4,7 +4,7 @@ const {
   status200,
 } = require('../constants/status');
 
-const { decodeToken } = require('../middlewares/auth');
+const { decodeToken } = require('../utils/auth');
 const BadRequestError = require('../errors/BadRequestError');
 const NotFoundError = require('../errors/NotFoundError');
 const AccessError = require('../errors/AccessError');

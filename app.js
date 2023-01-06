@@ -2,26 +2,34 @@
 const express = require('express');
 const { errors } = require('celebrate');
 const mongoose = require('mongoose');
-const { checkToken } = require('./middlewares/auth');
+const { errorHandler } = require('./middlewares/errorHandler');
+const { validateLogin } = require('./middlewares/validateLogin');
+const { login, createUser } = require('./controllers/users');
+
+const { checkToken } = require('./middlewares/checkToken');
 const routerCard = require('./routes/cards');
 const routerUser = require('./routes/users');
-const { errorHandler } = require('./middlewares/errorHandler');
+const { validateCreateUser } = require('./middlewares/validateCreateUser');
 
 mongoose.set('strictQuery', true);
 // Слушаем 3000 порт
-const { PORT = 3000 } = process.env;
+const { PORT = 3000, DB_LINK = 'mongodb://127.0.0.1:27017/mestodb' } = process.env;
 
 const app = express();
 
 // подключаемся к серверу mongo
-mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
+mongoose.connect(DB_LINK, {
   useNewUrlParser: true,
 }, () => {
   console.log('Connected to Mongo db');
 });
 
 app.use(express.json());
-app.use('/users', routerUser);
+
+app.post('/signin', validateLogin, login);
+app.post('/signup', validateCreateUser, createUser);
+
+app.use('/users', checkToken, routerUser);
 app.use('/cards', checkToken, routerCard);
 app.use(errors());
 app.all('/*', (req, res) => res.status(404).json({ message: 'Страница не существует' }));

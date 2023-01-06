@@ -3,7 +3,7 @@ const User = require('../models/user');
 const {
   status200,
 } = require('../constants/status');
-const { createToken, decodeToken } = require('../middlewares/auth');
+const { createToken, decodeToken } = require('../utils/auth');
 const BadRequestError = require('../errors/BadRequestError');
 const NotFoundError = require('../errors/NotFoundError');
 const AccountExistsError = require('../errors/AccountExistsError');

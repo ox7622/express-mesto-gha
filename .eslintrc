@@ -14,14 +14,7 @@
   "parserOptions": {
     "ecmaVersion": "latest"
   },
-  "plugins": [
-    "react"
-  ],
-  "settings": {
-    "react": {
-      "version": "detect"
-    }
-  },
+
   "rules": {
     "no-underscore-dangle": [
       "error",
