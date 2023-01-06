@@ -6,10 +6,10 @@ const LoginError = require('../errors/LoginError');
 
 module.exports.checkToken = (req, res, next) => {
   const authData = req.headers.authorization;
-  const token = authData.replace('Bearer ', '');
-  if (!authData || !authData.startsWith('Bearer ')) {
+  if (!authData || !authData.startsWith('Bearer ') || authData === undefined) {
     throw new LoginError('Пользователь не авторизован');
   }
+  const token = authData.replace('Bearer ', '');
   try {
     jwt.verify(token, TOKEN);
   } catch (err) {

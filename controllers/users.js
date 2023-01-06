@@ -19,7 +19,9 @@ module.exports.createUser = async (req, res, next) => {
     const user = await User.create({
       name, about, avatar, email, password: hash,
     });
-    return res.status(status200).json(user);
+    return res.status(status200).json({
+      name: user.name, about: user.about, avatar: user.avatar, email: user.email,
+    });
   } catch (err) {
     if (err.code === 11000) {
       return next(new AccountExistsError('Пользователь с такими данными уже есть в базе'));
@@ -110,7 +112,7 @@ module.exports.login = async (req, res, next) => {
   try {
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
-      throw new NotFoundError('Пользователь не найден');
+      throw new LoginError('Неправильный логин или пароль');
     }
     const result = await bcrypt.compare(password, user.password);
     if (result) {
@@ -132,6 +134,9 @@ module.exports.getProfile = async (req, res, next) => {
   const userId = decodeToken(req.user);
   try {
     const user = await User.findById(userId._id);
+    if (!user) {
+      throw new NotFoundError('Такого пользователя в базе нет');
+    }
     return res.status(status200).json(user);
   } catch (err) {
     if (err.name === 'ValidationError' || err.name === 'CastError') {
